@@ -1,41 +1,49 @@
 # discojockey
 
-**Paste a DJ set. Get every track.**
+**Find the tracks. Map the transitions. Catch the vibe.**
 
-Drop any YouTube DJ set link into [falaq18.github.io/discojockey](https://falaq18.github.io/discojockey/) and it:
+Paste any YouTube DJ set into [falaq18.github.io/discojockey](https://falaq18.github.io/discojockey/) and it listens to the set and shows:
 
-- **Finds the tracklist.** Reads the video description and the top ~300 comments and replies, scores every candidate, and picks the one that looks most like a real tracklist. A list split over several comments ("part 2") gets stitched together.
-- **Puts the tracks in order with cue points.** Every track gets a timestamp that seeks the player. Every transition gets a "hear the transition" button that starts 20 seconds before the mix. `w/` lines show up as blends over the track above.
-- **Follows along as you listen.** A timeline, the current track and what's up next all update with the YouTube player.
-- **Suggests more music.** Tracks are matched on Deezer for artwork, BPM and 30-second previews. Related artists are ranked by how many artists in the set they connect to.
-- **Lets you fix it.** If a set has no tracklist, or a wrong one, paste or edit it by hand. Your edits are saved in your browser.
+- **01 / Mix Studio**
+  - **Overlapping Mix Timeline**: every track on Deck A or Deck B, with the real blend windows where two tracks play together. Click to scrub, or jump to the next transition.
+  - **Now playing**, synced with the YouTube player, including live two-deck blends and bass swaps.
+  - **Set Energy & Crowd Arc**: the energy curve measured from the audio, with the set's phases (warm-up, build-up, peak time, breather, closing).
+  - **The Tracklist**: time in the mix, BPM, key and Camelot code, listening links, and *Mix Notes* that explain each transition (key compatibility, tempo moves, bass swaps, blend length, where in the track the DJ started it).
+- **02 / Discover & Mix**
+  - **What to spin next**: real tracks related to the one you pick, with BPM and key measured from their previews, ranked by how well they mix. You can preview them, filter them and adjust the target BPM or key.
+  - **Practice Crate**: save tracks from any set, sort them by BPM or key, export them as CSV or TXT, or open them as a YouTube playlist.
+- **Upload your own mix** to decode it the same way.
+- **One-click YouTube playlist** of a whole set. No login needed.
 
-## How it finds tracks (and its limits)
+## How it fits together
 
-The site is static (GitHub Pages), so it can't listen to the audio. Tracklists come from what people wrote under the video, so a set with no tracklist in its description or comments needs one pasted in (the page links to a 1001Tracklists search for it).
+```
+GitHub Pages (index.html, app.js)  ──►  discojockey engine (engine/)
+  the original design, now fed            downloads the audio, finds the track changes,
+  by real analysis                        identifies the songs (Shazam / AudD), measures
+                                          blends, BPM, key and energy, suggests next tracks
+```
 
-The parser handles the common formats: `0:00 Artist - Title`, `01. [00:00] Artist – Title [Label]`, `Artist - Title 1:02:30`, ranges like `9:40 - 14:00`, HTML in comments, `ID - ID`, and untimed numbered lists.
+The website is static and the listening happens on the engine. A GitHub Pages site can't download YouTube audio, so the engine has to run somewhere. **Setting it up takes about 10 minutes and can be free.** See [`engine/README.md`](engine/README.md).
 
-## YouTube API key
+## Setup
 
-Reading descriptions and comments uses the YouTube Data API v3, which needs a free key:
+1. Deploy the engine ([Hugging Face Spaces](engine/README.md#a-hugging-face-spaces-free-and-always-online) or [your own computer](engine/README.md#b-your-own-computer-free-and-youtube-doesnt-block-home-connections)).
+2. Put its address in [`config.js`](config.js):
+   ```js
+   window.DISCOJOCKEY_ENGINE = 'https://<your-username>-<space-name>.hf.space';
+   ```
+3. GitHub Pages: **Settings → Pages → Deploy from a branch → `main` / `(root)`**.
 
-1. In Google Cloud, enable **YouTube Data API v3**.
-2. Create an **API key** under Credentials.
-3. Either paste it in the site's settings (stored only in that browser), or set `SITE_YT_API_KEY` at the top of `app.js` so every visitor gets automatic detection. If you set it in `app.js`, restrict the key to HTTP referrer `https://falaq18.github.io/*` and to the YouTube Data API only, since anyone can read the page source.
-
-Without a key the player and pasted tracklists still work.
+Without an engine the site still accepts a pasted timestamped tracklist, but it can't measure anything.
 
 ## Files
 
-| File | What it does |
+| File | What it is |
 | --- | --- |
-| `index.html` | Page markup |
-| `styles.css` | Styles (dark, works on phones) |
-| `parser.js` | Tracklist parser, no dependencies |
-| `app.js` | YouTube fetch, player, Deezer matching and recommendations |
-| `tests/parser.test.js` | Parser tests: `node --test tests/*.test.js` |
-
-## Deploy
-
-Settings → Pages → Deploy from a branch → `main` / `(root)`.
+| `index.html` | The page (Tailwind, original design) |
+| `app.js` | Talks to the engine and draws the timeline, energy arc, tracklist, Discover and crate |
+| `parser.js` | Reads pasted timestamped tracklists in the browser |
+| `config.js` | The engine's address |
+| `engine/` | The analysis server: Python, Docker. Has its own README and tests |
+| `tests/parser.test.js` | `node --test tests/*.test.js` |

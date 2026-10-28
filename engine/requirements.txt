@@ -1,0 +1,12 @@
+# Audio analysis
+numpy==2.5.4
+scipy==1.18.1
+# API server
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+httpx==0.28.1
+# Song recognition (Shazam's free endpoint via ShazamIO; AudD needs only httpx)
+shazamio==0.9.0
+# YouTube: keep yt-dlp current, YouTube changes often. [default] adds the JS player solver.
+yt-dlp[default]>=2026.10.26

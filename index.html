@@ -1,108 +1,846 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>discojockey</title>
-  <meta name="description" content="Paste any YouTube DJ set. Get every track in order, with cue points, transitions and what to listen to next.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>discojockey — Find the tracks. Map the transitions. Catch the vibe.</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,500;0,700;0,800;1,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Syne"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            cream: '#F6F3EB',
+            paper: '#FFFDF7',
+            ink: '#0D0D0D',
+            lime: '#D4FF00',
+            coral: '#FF3B30',
+            tangerine: '#FF6B00',
+            cobalt: '#1E3AFF',
+            violet: '#7C3AED',
+            mint: '#00E5A3'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --cream: #F6F3EB;
+      --paper: #FFFDF7;
+      --ink: #0D0D0D;
+      --lime: #D4FF00;
+      --coral: #FF3B30;
+      --tangerine: #FF6B00;
+      --cobalt: #1E3AFF;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      background-color: var(--cream);
+      color: var(--ink);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+      selection-background-color: #D4FF00;
+    }
+    ::selection {
+      background: #D4FF00;
+      color: #0D0D0D;
+    }
+    /* Editorial Neo-Brutalist / Awwwards "LOUD, NOT MESSY" Architecture */
+    .dj-card {
+      background: var(--paper);
+      border: 2.5px solid var(--ink);
+      box-shadow: 6px 6px 0px var(--ink);
+      border-radius: 18px;
+      transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .dj-card-dark {
+      background: var(--ink);
+      color: var(--paper);
+      border: 2.5px solid var(--ink);
+      box-shadow: 6px 6px 0px var(--lime);
+      border-radius: 18px;
+    }
+    .dj-card-lime {
+      background: var(--lime);
+      color: var(--ink);
+      border: 2.5px solid var(--ink);
+      box-shadow: 6px 6px 0px var(--ink);
+      border-radius: 18px;
+    }
+    .dj-btn {
+      border: 2px solid var(--ink);
+      box-shadow: 3.5px 3.5px 0px var(--ink);
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.12s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .dj-btn:hover {
+      transform: translate(-1.5px, -1.5px);
+      box-shadow: 5px 5px 0px var(--ink);
+    }
+    .dj-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1.5px 1.5px 0px var(--ink);
+    }
+    .dj-pill {
+      border: 2px solid var(--ink);
+      box-shadow: 2px 2px 0px var(--ink);
+      transition: all 0.12s ease;
+    }
+    .dj-pill:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3.5px 3.5px 0px var(--ink);
+    }
+    /* Animated Transition Overlap Stripes */
+    @keyframes slideStripes {
+      0% { background-position: 0 0; }
+      100% { background-position: 28px 0; }
+    }
+    .overlap-blend-zone {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(212, 255, 0, 0.85),
+        rgba(212, 255, 0, 0.85) 7px,
+        rgba(13, 13, 13, 0.92) 7px,
+        rgba(13, 13, 13, 0.92) 14px
+      );
+      background-size: 28px 28px;
+      animation: slideStripes 1.2s linear infinite;
+    }
+    /* Infinite Editorial Ticker */
+    @keyframes marqueeScroll {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marqueeScroll 28s linear infinite;
+    }
+    .marquee-track:hover {
+      animation-play-state: paused;
+    }
+    /* Equalizer Bars */
+    @keyframes eqPulse {
+      0%, 100% { transform: scaleY(0.22); }
+      50% { transform: scaleY(1); }
+    }
+    .eq-bar {
+      transform-origin: bottom;
+      transition: transform 0.15s ease;
+    }
+    .playing-eq .eq-bar-1 { animation: eqPulse 0.55s ease-in-out infinite; }
+    .playing-eq .eq-bar-2 { animation: eqPulse 0.42s ease-in-out infinite 0.12s; }
+    .playing-eq .eq-bar-3 { animation: eqPulse 0.65s ease-in-out infinite 0.24s; }
+    .playing-eq .eq-bar-4 { animation: eqPulse 0.48s ease-in-out infinite 0.07s; }
+    /* Vinyl Spin */
+    @keyframes spinVinyl {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .vinyl-spin {
+      animation: spinVinyl 7s linear infinite;
+    }
+    /* Editorial Row Hover */
+    .editorial-row {
+      transition: background-color 0.16s ease, transform 0.16s ease;
+    }
+    .editorial-row:hover {
+      background-color: #FFFDF7;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F6F3EB;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0D0D0D;
+      border-radius: 99px;
+    }
+  </style>
 </head>
-<body>
-  <header class="top">
-    <a class="logo" href="./"><span class="disc" aria-hidden="true"></span>discojockey</a>
-    <button class="key-status" id="keyStatus" data-action="settings">Add API key</button>
+<body class="min-h-screen flex flex-col selection:bg-lime selection:text-ink">
+
+  <!-- TOP HIGH-ENERGY TICKER TAPE -->
+  <div class="bg-ink text-lime border-b-2 border-ink py-1.5 overflow-hidden text-xs font-mono font-bold tracking-wider uppercase select-none">
+    <div class="marquee-track">
+      <div class="flex items-center gap-8 px-4">
+        <span>★ DISCOJOCKEY // SET DNA DECODER</span>
+        <span class="text-paper">● FIND THE TRACKS. MAP THE TRANSITIONS. CATCH THE VIBE.</span>
+        <span class="text-coral">▲ NO GATEKEEPING — EVERY TRACK ID UNLOCKED</span>
+        <span class="text-lime">◆ OVERLAPPING BLEND WINDOWS + CAMELOT HARMONIC MATCHING</span>
+        <span class="text-paper">● DROP A YOUTUBE SET OR AUDIO FILE</span>
+        <span class="text-tangerine">★ ZERO BORING DASHBOARDS — PURE CLUB DNA</span>
+      </div>
+      <div class="flex items-center gap-8 px-4" aria-hidden="true">
+        <span>★ DISCOJOCKEY // SET DNA DECODER</span>
+        <span class="text-paper">● FIND THE TRACKS. MAP THE TRANSITIONS. CATCH THE VIBE.</span>
+        <span class="text-coral">▲ NO GATEKEEPING — EVERY TRACK ID UNLOCKED</span>
+        <span class="text-lime">◆ OVERLAPPING BLEND WINDOWS + CAMELOT HARMONIC MATCHING</span>
+        <span class="text-paper">● DROP A YOUTUBE SET OR AUDIO FILE</span>
+        <span class="text-tangerine">★ ZERO BORING DASHBOARDS — PURE CLUB DNA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY NAVIGATION HEADER (Strictly 2 Primary Pages: Mix Studio & Discover & Mix) -->
+  <header class="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b-[2.5px] border-ink">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <!-- Brand Wordmark -->
+      <div class="flex items-center gap-3">
+        <button onclick="switchPrimaryPage('studio')" class="group flex items-center gap-3 text-left focus:outline-none">
+          <div id="headerEq" class="w-11 h-11 rounded-2xl bg-lime border-2 border-ink flex items-end justify-center gap-1 p-2.5 shadow-[3px_3px_0px_#0D0D0D] group-hover:bg-coral transition-colors">
+            <span class="w-1.5 h-full bg-ink rounded-full eq-bar eq-bar-1"></span>
+            <span class="w-1.5 h-3/4 bg-ink rounded-full eq-bar eq-bar-2"></span>
+            <span class="w-1.5 h-full bg-ink rounded-full eq-bar eq-bar-3"></span>
+            <span class="w-1.5 h-2/3 bg-ink rounded-full eq-bar eq-bar-4"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display font-extrabold text-2xl sm:text-3xl tracking-tight text-ink leading-none">discojockey</span>
+              <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-extrabold uppercase bg-coral text-paper border border-ink rounded-full">LIVE DNA</span>
+            </div>
+            <p class="text-[11px] font-mono font-bold text-ink/70 tracking-tight hidden sm:block">find the tracks. steal the vibe.</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Strictly 2 Primary Navigation Pages -->
+      <nav aria-label="Main Navigation" class="flex items-center bg-paper border-2 border-ink rounded-full p-1 shadow-[3px_3px_0px_#0D0D0D]">
+        <button id="navBtnStudio" onclick="switchPrimaryPage('studio')" class="px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-display font-extrabold tracking-tight transition-all bg-lime text-ink border-2 border-ink shadow-[2px_2px_0px_#0D0D0D]">
+          01 / Mix Studio
+        </button>
+        <button id="navBtnDiscover" onclick="switchPrimaryPage('discover')" class="px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-display font-extrabold tracking-tight transition-all text-ink/70 hover:text-ink border-2 border-transparent flex items-center gap-1.5">
+          <span>02 / Discover &amp; Mix</span>
+          <span id="navCrateBadge" class="px-1.5 py-0.5 text-[10px] font-mono bg-ink text-lime rounded-full">6</span>
+        </button>
+      </nav>
+
+      <!-- Right Action Controls: Quick Set Switcher & Export -->
+      <div class="flex items-center gap-2">
+        <button onclick="openTrackDrawer(null)" title="Add Missing Track ID" class="dj-btn hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-paper text-ink text-xs font-extrabold">
+          <span>+ ID Track</span>
+        </button>
+        <button onclick="exportCleanTracklist()" class="dj-btn inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink text-lime text-xs font-mono font-extrabold uppercase tracking-wider">
+          <span>Copy Tracklist</span>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <section id="hero" class="hero">
-    <h1>Paste a DJ set.<br><span>Get every track.</span></h1>
-    <p class="lede">Drop any YouTube mix. We find its tracklist in the description or comments, put every song in order with cue points and transitions, and suggest what to dig into next.</p>
-    <form id="analyseForm" class="search">
-      <input id="urlInput" type="text" inputmode="url" autocomplete="off" spellcheck="false"
-             placeholder="https://www.youtube.com/watch?v=…  (or paste a tracklist)" aria-label="YouTube link or tracklist">
-      <button class="btn primary" type="submit">Break it down</button>
-    </form>
-    <div id="status" class="status" hidden></div>
-    <div id="recent" class="recent" hidden></div>
-  </section>
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20 space-y-10">
 
-  <main id="set" hidden>
-    <div class="set-grid">
-      <aside id="stage" class="stage">
-        <div class="player-wrap"><div id="player"></div></div>
-        <div class="set-head">
-          <h2 id="setTitle"></h2>
-          <p id="setSub"></p>
-        </div>
-        <div id="timeline" class="timeline" hidden>
-          <div class="segs"></div>
-          <span id="playhead" class="playhead"></span>
-        </div>
-        <div id="nowPlaying"></div>
-        <div class="actions">
-          <button class="btn ghost sm" data-action="copy">Copy tracklist</button>
-          <button class="btn ghost sm" data-action="edit">Edit / paste</button>
-          <button class="btn ghost sm" data-action="share">Share</button>
-          <button class="btn ghost sm" data-action="refetch" title="Search the video again">Re-scan</button>
-          <a class="btn ghost sm" id="ytLink" target="_blank" rel="noopener">YouTube ↗</a>
-        </div>
-      </aside>
+    <!-- =================================================================== -->
+    <!-- HERO SECTION: LOUD, NOT MESSY EDITORIAL OPENER + SOURCE BAR        -->
+    <!-- =================================================================== -->
+    <section class="relative">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- Left 7 Cols: Bold Editorial Statement + Instant Set Analyzer Input -->
+        <div class="lg:col-span-7 dj-card p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden bg-paper">
+          <!-- Floating Corner Stamp -->
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime border-2 border-ink text-xs font-mono font-extrabold uppercase">
+              <span class="w-2 h-2 rounded-full bg-coral animate-ping"></span>
+              <span>ISSUE 04 // SONIC ARCHIVE &amp; HARMONIC ENGINE</span>
+            </div>
+            <button onclick="toggleEngineModal()" id="engineStatusBtn" class="text-[11px] font-mono font-bold underline decoration-2 decoration-coral hover:text-coral">
+              ⚙ Engine: checking…
+            </button>
+          </div>
 
-      <section class="list-panel">
-        <div class="list-head">
-          <h3 id="trackCount"></h3>
-          <span id="trackSource" class="muted"></span>
+          <div class="space-y-3 my-1">
+            <h1 class="font-display font-extrabold text-4xl sm:text-6xl leading-[0.94] tracking-tight text-ink uppercase">
+              EVERY SET HAS A <span class="inline-block bg-lime px-2.5 py-0.5 border-2 border-ink rounded-xl shadow-[4px_4px_0px_#0D0D0D] -rotate-1">STORY.</span>
+            </h1>
+            <p class="text-base sm:text-lg font-semibold text-ink/80 max-w-2xl leading-snug">
+              Find the tracks. Map the transitions. Catch the vibe. Drop any YouTube DJ set or raw audio mix to decode overlapping blends, BPM shifts, Camelot keys, and what to spin next.
+            </p>
+          </div>
+
+          <!-- Interactive Source Bar: YouTube URL + Audio Upload + Presets -->
+          <div class="mt-6 pt-5 border-t-2 border-ink/15 space-y-3">
+            <div class="flex flex-col sm:flex-row gap-2.5">
+              <div class="relative flex-1">
+                <input
+                  id="sourceUrlInput"
+                  type="text"
+                  placeholder="Paste any YouTube DJ set link (or a timestamped tracklist)..."
+                  value=""
+                  onkeydown="if (event.key === 'Enter') handleAnalyzeSubmission()"
+                  class="w-full px-4 py-3.5 rounded-xl bg-cream border-2 border-ink text-sm font-mono font-bold text-ink placeholder:text-ink/45 focus:outline-none focus:bg-paper focus:ring-2 focus:ring-cobalt"
+                />
+              </div>
+              <button onclick="handleAnalyzeSubmission()" class="dj-btn px-6 py-3.5 rounded-xl bg-coral text-paper font-display font-extrabold text-sm uppercase tracking-wider whitespace-nowrap flex items-center justify-center gap-2">
+                <span>Decode Set</span>
+                <span class="font-mono text-base">→</span>
+              </button>
+              <label class="dj-btn px-4 py-3.5 rounded-xl bg-lime text-ink font-display font-extrabold text-sm uppercase tracking-wider whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer" title="Upload your own mix (MP3, WAV, M4A, FLAC, OGG) to decode it the same way">
+                <span>↑ Audio File</span>
+                <input id="audioFileInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg" class="hidden" onchange="handleLocalAudioUpload(event)" />
+              </label>
+            </div>
+
+            <!-- Recently Decoded Sets + Live Decode Progress -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div id="recentSetsRow" class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] font-mono font-extrabold uppercase text-ink/60 mr-1">Recent Sets:</span>
+                <span class="text-[11px] font-mono font-bold text-ink/50">none yet</span>
+              </div>
+              <span id="dspStatusPill" class="text-[11px] font-mono font-bold text-ink/70">
+                Ready to decode
+              </span>
+            </div>
+
+            <!-- Decode Progress (striped like the blend zones) -->
+            <div id="decodeProgress" class="hidden space-y-1.5">
+              <div class="flex items-center justify-between gap-3 text-[11px] font-mono font-extrabold uppercase">
+                <span id="decodeStageLabel" class="truncate">Fetching the set…</span>
+                <span id="decodeElapsed" class="shrink-0 px-2 py-0.5 rounded-full bg-ink text-lime">0s</span>
+              </div>
+              <div class="h-4 rounded-full border-2 border-ink bg-cream overflow-hidden">
+                <div id="decodeBar" class="h-full overlap-blend-zone transition-all duration-500" style="width: 4%;"></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <ol id="tracklist" class="tracklist"></ol>
+
+        <!-- Right 5 Cols: Active Mix Stage Deck (YouTube / Local Audio / Synth Player + Live Now Playing Telemetry) -->
+        <div class="lg:col-span-5 dj-card-dark p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden">
+          <!-- Top Bar: Active Set Badge & Time Readout -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="liveDeckIndicator" class="w-2.5 h-2.5 rounded-full bg-lime"></span>
+              <span id="activeSetTitleBadge" class="font-mono text-xs font-bold uppercase tracking-wider text-lime truncate">
+                NO SET LOADED
+              </span>
+            </div>
+            <a id="activeSetSourceAnchor" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-full bg-paper/10 hover:bg-lime hover:text-ink text-[11px] font-mono font-bold text-paper transition-colors whitespace-nowrap">
+              Source ↗
+            </a>
+          </div>
+
+          <!-- Embedded Media Viewport (YouTube IFrame + Local/Synth Visualizer Fallback) -->
+          <div class="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-paper/25 bg-black mb-4">
+            <iframe
+              id="ytIframeElement"
+              class="w-full h-full"
+              src="about:blank"
+              title="discojockey DJ Set Player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+            <!-- Empty Deck Placeholder -->
+            <div id="emptyStageOverlay" class="absolute inset-0 bg-ink flex flex-col items-center justify-center gap-2 text-center p-4">
+              <div class="w-16 h-16 rounded-full border-2 border-paper/30 vinyl-spin flex items-center justify-center" style="background: radial-gradient(circle, #D4FF00 0 16%, #0D0D0D 17% 24%, #1d1d1d 25% 100%);"></div>
+              <p class="font-mono text-xs font-bold text-paper/70 uppercase">Paste a set link to load the decks</p>
+            </div>
+            <!-- Overlay Canvas for Local Uploaded Audio -->
+            <div id="customAudioStage" class="hidden absolute inset-0 bg-ink flex flex-col justify-between p-4">
+              <div class="flex items-center justify-between">
+                <span id="customStageModeBadge" class="px-2.5 py-1 rounded-full bg-lime text-ink font-mono text-[11px] font-extrabold uppercase">
+                  YOUR UPLOADED MIX
+                </span>
+                <span id="customStageMetrics" class="font-mono text-xs text-paper/80"></span>
+              </div>
+              <canvas id="waveformCanvas" width="480" height="140" class="w-full h-28 rounded-lg"></canvas>
+              <audio id="localAudioElement" class="w-full h-8" controls></audio>
+            </div>
+          </div>
+
+          <!-- Live Transport & "Now Spinning" Dual-Deck Readout -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3 bg-paper/10 rounded-xl p-3 border border-paper/15">
+              <div class="flex items-center gap-2.5">
+                <button id="masterPlayBtn" onclick="toggleMasterPlayback()" class="w-11 h-11 rounded-xl bg-lime text-ink border-2 border-ink font-display font-extrabold text-base flex items-center justify-center hover:bg-coral hover:text-paper transition-colors">
+                  ▶
+                </button>
+                <div>
+                  <div class="text-[10px] font-mono uppercase tracking-widest text-paper/60" id="nowPlayingStateLabel">ON THE DECKS NOW</div>
+                  <div id="nowPlayingHeadline" class="font-display font-extrabold text-sm sm:text-base text-paper leading-tight line-clamp-1">
+                    Waiting for a set…
+                  </div>
+                </div>
+              </div>
+              <div class="text-right font-mono">
+                <div id="masterClockDisplay" class="text-xl sm:text-2xl font-extrabold text-lime leading-none">00:00</div>
+                <div id="masterDurationDisplay" class="text-[11px] text-paper/60">/ 00:00</div>
+              </div>
+            </div>
+
+            <!-- Scrubber Slider + Quick Jump Buttons -->
+            <div class="space-y-1.5">
+              <input
+                id="masterSeekSlider"
+                type="range"
+                min="0"
+                max="0"
+                step="1"
+                value="0"
+                oninput="seekSetToSeconds(Number(this.value), true)"
+                class="w-full accent-lime cursor-pointer h-2 bg-paper/20 rounded-lg"
+              />
+              <div class="flex items-center justify-between text-[11px] font-mono text-paper/75">
+                <button onclick="jumpToNextOverlap()" class="hover:text-lime underline decoration-lime font-bold">
+                  ⚡ Jump to next transition blend
+                </button>
+                <span id="activeBlendCallout" class="text-lime font-bold">Single deck groove</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- PAGE 1: MIX STUDIO (Timeline + Energy Graph + Editorial Tracklist)  -->
+    <!-- =================================================================== -->
+    <div id="pageStudio" class="space-y-10">
+
+      <!-- SIGNATURE FEATURE: OVERLAPPING DJ MIX TIMELINE -->
+      <section class="dj-card p-5 sm:p-7 space-y-5">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-ink pb-4">
+          <div>
+            <div class="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-wider text-coral mb-1">
+              <span>● SIGNATURE MULTI-DECK ARCHITECTURE</span>
+            </div>
+            <h2 class="font-display font-extrabold text-2xl sm:text-4xl text-ink tracking-tight uppercase">
+              Overlapping Mix Timeline
+            </h2>
+            <p class="text-sm font-medium text-ink/75 mt-0.5">
+              Click anywhere on the canvas to scrub the mix. Striped acid-lime zones mark live two-deck blends where tracks overlap.
+            </p>
+          </div>
+          <!-- Legend + Quick Actions -->
+          <div class="flex flex-wrap items-center gap-3 text-xs font-mono font-bold">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cream border border-ink">
+              <span class="w-3 h-3 rounded-sm bg-cobalt inline-block border border-ink"></span> Deck A
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cream border border-ink">
+              <span class="w-3 h-3 rounded-sm bg-tangerine inline-block border border-ink"></span> Deck B
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-lime border border-ink">
+              <span class="w-3 h-3 rounded-sm overlap-blend-zone inline-block border border-ink"></span> Blend Overlap
+            </span>
+          </div>
+        </div>
+
+        <!-- Multi-Deck Horizontal Timeline Canvas -->
+        <div class="relative select-none">
+          <!-- Time Ruler -->
+          <div id="timelineRuler" class="relative h-7 border-b-2 border-ink font-mono text-[11px] font-bold text-ink/70 mb-2"></div>
+
+          <!-- Interactive Track Lanes Wrapper -->
+          <div id="timelineViewport" onclick="handleTimelineClick(event)" class="relative bg-cream border-2 border-ink rounded-2xl p-3 overflow-hidden cursor-pointer space-y-2.5 min-h-[168px]">
+            <!-- Deck A Lane -->
+            <div class="relative h-16">
+              <div class="absolute left-1.5 top-1 z-10 text-[10px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded bg-ink text-paper opacity-75 pointer-events-none">
+                DECK A
+              </div>
+              <div id="deckALane" class="relative w-full h-full"></div>
+            </div>
+
+            <!-- Transition Overlap Callout Strip (Middle Blend Band) -->
+            <div class="relative h-7 border-y border-dashed border-ink/30 flex items-center">
+              <span class="text-[10px] font-mono font-extrabold uppercase tracking-wider text-ink/60 pl-2 pointer-events-none">
+                TRANSITION OVERLAPS
+              </span>
+              <div id="overlapBandLane" class="absolute inset-0"></div>
+            </div>
+
+            <!-- Deck B Lane -->
+            <div class="relative h-16">
+              <div class="absolute left-1.5 top-1 z-10 text-[10px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded bg-ink text-paper opacity-75 pointer-events-none">
+                DECK B
+              </div>
+              <div id="deckBLane" class="relative w-full h-full"></div>
+            </div>
+
+            <!-- Moving Playhead Line -->
+            <div id="timelinePlayhead" class="absolute top-0 bottom-0 w-[3px] bg-coral z-30 pointer-events-none transition-all duration-75" style="left: 8%;">
+              <div class=" -ml-[9px] -mt-1 px-1.5 py-0.5 rounded bg-coral text-paper font-mono text-[10px] font-extrabold border border-ink shadow-sm whitespace-nowrap" id="playheadTimeFlag">
+                00:00
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SELECTED TRACK / TRANSITION INSPECTOR BAR (With Boundary Nudge, Direct Listening Links & Find Similar) -->
+        <div id="timelineInspectorCard" class="bg-ink text-paper rounded-2xl p-4 sm:p-5 border-2 border-ink shadow-[4px_4px_0px_#D4FF00] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <!-- Populated dynamically by renderTimelineInspector() -->
+        </div>
+
+        <!-- INTERACTIVE SET ENERGY & VIBE GRAPH (Synchronized with Timeline) -->
+        <div class="pt-3 border-t-2 border-ink/15 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="px-2.5 py-0.5 rounded-full bg-tangerine text-ink border border-ink font-mono text-xs font-extrabold uppercase">
+                VIBE SILHOUETTE
+              </span>
+              <h3 class="font-display font-extrabold text-lg sm:text-xl text-ink uppercase">
+                Set Energy &amp; Crowd Arc
+              </h3>
+            </div>
+            <div id="energyHoverReadout" class="font-mono text-xs font-bold text-ink/80 bg-lime px-3 py-1 rounded-full border border-ink">
+              Hover or tap the energy wave to inspect the vibe shift
+            </div>
+          </div>
+
+          <!-- Expressive SVG Energy Silhouette -->
+          <div class="relative bg-ink rounded-2xl p-3 sm:p-4 border-2 border-ink overflow-hidden">
+            <svg id="energySvgCanvas" viewBox="0 0 1000 155" preserveAspectRatio="none" class="w-full h-32 sm:h-36 cursor-pointer" onclick="handleEnergyGraphClick(event)" onmousemove="handleEnergyGraphHover(event)">
+              <!-- Rendered dynamically -->
+            </svg>
+            <!-- Vibe Phase Pills along bottom -->
+            <div id="energyPhasePills" class="grid grid-cols-5 gap-1 pt-2 border-t border-paper/15 text-[10px] sm:text-xs font-mono font-bold text-paper/80 text-center">
+              <button onclick="seekSetToRatio(0.08)" class="hover:text-lime py-1 rounded hover:bg-paper/10 transition-colors">01 / WARM-UP GROOVE</button>
+              <button onclick="seekSetToRatio(0.28)" class="hover:text-lime py-1 rounded hover:bg-paper/10 transition-colors">02 / EUPHORIC LIFT</button>
+              <button onclick="seekSetToRatio(0.50)" class="hover:text-lime py-1 rounded hover:bg-paper/10 transition-colors">03 / HANDS-UP BUILD</button>
+              <button onclick="seekSetToRatio(0.74)" class="hover:text-lime py-1 rounded hover:bg-paper/10 transition-colors">04 / PEAK-TIME BASS</button>
+              <button onclick="seekSetToRatio(0.92)" class="hover:text-lime py-1 rounded hover:bg-paper/10 transition-colors">05 / CATHARTIC FINALE</button>
+            </div>
+          </div>
+        </div>
       </section>
+
+      <!-- ================================================================= -->
+      <!-- EDITORIAL TRACKLIST (Magazine-Style Layout, NOT a Spreadsheet)    -->
+      <!-- ================================================================= -->
+      <section class="space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 text-xs font-mono font-extrabold uppercase text-cobalt">
+              <span>★ INTERACTIVE ARCHIVE // CLICK ANY TRACK TO JUMP</span>
+            </div>
+            <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-ink tracking-tight uppercase leading-none mt-1">
+              The Tracklist
+            </h2>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <input
+                id="trackSearchInput"
+                type="text"
+                oninput="renderEditorialTracklist()"
+                placeholder="Filter by title, artist, key..."
+                class="px-3.5 py-2 rounded-xl bg-paper border-2 border-ink text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-cobalt"
+              />
+            </div>
+            <button onclick="makeYouTubePlaylist('set')" class="dj-btn px-4 py-2 rounded-xl bg-coral text-paper font-display font-extrabold text-xs uppercase">
+              ▶ YouTube Playlist
+            </button>
+            <button onclick="openTrackDrawer(null)" class="dj-btn px-4 py-2 rounded-xl bg-lime text-ink font-display font-extrabold text-xs uppercase">
+              + Add Missing Track
+            </button>
+          </div>
+        </div>
+
+        <!-- Editorial Track Rows Container -->
+        <div id="editorialTracklistContainer" class="dj-card divide-y-2 divide-ink overflow-hidden">
+          <!-- Populated dynamically by renderEditorialTracklist() -->
+        </div>
+      </section>
+
     </div>
 
-    <section id="recs" class="recs" hidden>
-      <div class="list-head">
-        <h3>Dig deeper</h3>
-        <span class="muted">Artists related to the ones in this set</span>
+    <!-- =================================================================== -->
+    <!-- PAGE 2: DISCOVER & MIX (Record-Crate Harmonic Recommendation Engine)-->
+    <!-- =================================================================== -->
+    <div id="pageDiscover" class="hidden space-y-8">
+
+      <!-- Discover Header Banner -->
+      <section class="dj-card-lime p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ink text-lime font-mono text-xs font-extrabold uppercase">
+            <span>RECORD CRATE // HARMONIC &amp; TEMPO ENGINE</span>
+          </div>
+          <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-ink tracking-tight uppercase leading-none">
+            What To Spin Next.
+          </h2>
+          <p class="text-sm sm:text-base font-bold text-ink/85">
+            Pick any track from the set below — or tweak its BPM and Camelot key on the fly — to pull harmonically locked weapons from the crate.
+          </p>
+        </div>
+
+        <button onclick="switchPrimaryPage('studio')" class="dj-btn px-5 py-3 rounded-xl bg-ink text-paper font-display font-extrabold text-xs sm:text-sm uppercase tracking-wider">
+          ← Back to Mix Studio
+        </button>
+      </section>
+
+      <!-- Main Crate Grid: Left Seed Selector + Live Overrides | Right Harmonic Matches -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left 4 Columns: Found Tracks in Set + Live BPM/Key Override Controls -->
+        <div class="lg:col-span-4 space-y-5">
+          <div class="dj-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b-2 border-ink pb-3">
+              <h3 class="font-display font-extrabold text-lg uppercase text-ink">1. Pick Seed Track</h3>
+              <span class="font-mono text-xs font-bold text-ink/60">From Active Mix</span>
+            </div>
+            <div id="discoverSeedList" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Manual BPM & Key Override Box (Recalculates Recommendations Live) -->
+          <div class="dj-card-dark p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-extrabold uppercase text-lime">2. Pitch &amp; Key Lab</span>
+              <button onclick="resetSeedOverrides()" class="text-[11px] font-mono underline text-paper/70 hover:text-lime">Reset to detected</button>
+            </div>
+            <p class="text-xs text-paper/80 leading-relaxed">
+              Testing a pitched-up transition or key-lock edit? Adjust the target BPM or Camelot code to re-rank the crate in real time.
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-mono uppercase text-paper/70 mb-1">Target BPM</label>
+                <input
+                  id="overrideBpmInput"
+                  type="number"
+                  min="70"
+                  max="190"
+                  step="0.5"
+                  value="132"
+                  oninput="handleSeedOverrideChange()"
+                  class="w-full px-3 py-2 rounded-xl bg-paper text-ink font-mono font-extrabold text-base border-2 border-lime focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono uppercase text-paper/70 mb-1">Camelot Key</label>
+                <select
+                  id="overrideCamelotSelect"
+                  onchange="handleSeedOverrideChange()"
+                  class="w-full px-3 py-2 rounded-xl bg-paper text-ink font-mono font-extrabold text-base border-2 border-lime focus:outline-none"
+                >
+                  <option value="1A">1A (Ab Min)</option>
+                  <option value="1B">1B (B Maj)</option>
+                  <option value="2A">2A (Eb Min)</option>
+                  <option value="2B">2B (F# Maj)</option>
+                  <option value="3A">3A (Bb Min)</option>
+                  <option value="3B">3B (Db Maj)</option>
+                  <option value="4A">4A (F Min)</option>
+                  <option value="4B">4B (Ab Maj)</option>
+                  <option value="5A">5A (C Min)</option>
+                  <option value="5B">5B (Eb Maj)</option>
+                  <option value="6A" selected>6A (G Min)</option>
+                  <option value="6B">6B (Bb Maj)</option>
+                  <option value="7A">7A (D Min)</option>
+                  <option value="7B">7B (F Maj)</option>
+                  <option value="8A">8A (A Min)</option>
+                  <option value="8B">8B (C Maj)</option>
+                  <option value="9A">9A (E Min)</option>
+                  <option value="9B">9B (G Maj)</option>
+                  <option value="10A">10A (B Min)</option>
+                  <option value="10B">10B (D Maj)</option>
+                  <option value="11A">11A (F# Min)</option>
+                  <option value="11B">11B (A Maj)</option>
+                  <option value="12A">12A (Db Min)</option>
+                  <option value="12B">12B (E Maj)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Practice Crate: tracks saved from any set, sorted for mixing -->
+          <div class="dj-card p-5 space-y-4">
+            <div class="flex items-center justify-between border-b-2 border-ink pb-3">
+              <h3 class="font-display font-extrabold text-lg uppercase text-ink">3. Practice Crate</h3>
+              <select id="crateSortSelect" onchange="renderPracticeCrate()" class="px-2 py-1 rounded-lg border-2 border-ink font-mono text-[11px] font-extrabold bg-cream">
+                <option value="bpm">Sort: BPM</option>
+                <option value="key">Sort: Camelot</option>
+                <option value="added">Sort: Added</option>
+              </select>
+            </div>
+            <div id="practiceCrateList" class="space-y-2 max-h-[340px] overflow-y-auto pr-1"></div>
+            <div class="flex flex-wrap gap-1.5 pt-2 border-t-2 border-ink/15">
+              <button onclick="makeYouTubePlaylist('crate')" class="dj-pill px-3 py-1 rounded-full text-[11px] font-mono font-extrabold bg-coral text-paper">▶ YouTube</button>
+              <button onclick="exportCrate('csv')" class="dj-pill px-3 py-1 rounded-full text-[11px] font-mono font-extrabold bg-paper text-ink">CSV</button>
+              <button onclick="exportCrate('txt')" class="dj-pill px-3 py-1 rounded-full text-[11px] font-mono font-extrabold bg-paper text-ink" title="Artist - Title per line, for playlist importers">TXT</button>
+              <button onclick="exportCrate('copy')" class="dj-pill px-3 py-1 rounded-full text-[11px] font-mono font-extrabold bg-paper text-ink">Copy</button>
+              <button onclick="clearCrate()" class="text-[11px] font-mono font-bold text-coral underline ml-auto">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 8 Columns: Filter Bar + Curated Record-Crate Cards -->
+        <div class="lg:col-span-8 space-y-5">
+          <!-- Simple, Music-First Filter Pills -->
+          <div class="dj-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-mono font-extrabold uppercase text-ink/60 mr-1">Filter Crate:</span>
+              <button id="crateFilter_all" onclick="setCrateFilter('all')" class="dj-pill px-3.5 py-1.5 rounded-full text-xs font-mono font-extrabold bg-lime text-ink">
+                All Matches
+              </button>
+              <button id="crateFilter_harmonic" onclick="setCrateFilter('harmonic')" class="dj-pill px-3.5 py-1.5 rounded-full text-xs font-mono font-extrabold bg-paper text-ink">
+                Harmonic Lock (Same / ±1 Step)
+              </button>
+              <button id="crateFilter_tempo" onclick="setCrateFilter('tempo')" class="dj-pill px-3.5 py-1.5 rounded-full text-xs font-mono font-extrabold bg-paper text-ink">
+                Tight Tempo (±3 BPM)
+              </button>
+              <button id="crateFilter_peak" onclick="setCrateFilter('peak')" class="dj-pill px-3.5 py-1.5 rounded-full text-xs font-mono font-extrabold bg-paper text-ink">
+                Peak-Time Energy
+              </button>
+            </div>
+            <span id="crateMatchCountLabel" class="font-mono text-xs font-extrabold text-cobalt">
+              Pick a seed track
+            </span>
+          </div>
+
+          <!-- Active Seed Banner -->
+          <div id="discoverActiveSeedBanner" class="dj-card bg-ink text-paper p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Record-Crate Recommendations Grid -->
+          <div id="discoverRecommendationsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Populated dynamically by renderDiscoverPage() -->
+          </div>
+        </div>
+
       </div>
-      <div id="recGrid" class="rec-grid"></div>
-    </section>
+    </div>
+
   </main>
 
-  <footer class="foot">
-    Tracklists come from the video’s description and comments, so they’re as accurate as the people who wrote them. Recommendations and previews via Deezer.
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: EDIT / ADD TRACK ID DRAWER                                   -->
+  <!-- ===================================================================== -->
+  <div id="trackEditModal" class="fixed inset-0 z-50 hidden bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="dj-card w-full max-w-lg p-6 sm:p-7 space-y-5 bg-paper max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b-2 border-ink pb-3">
+        <h3 id="trackModalHeading" class="font-display font-extrabold text-2xl uppercase text-ink">Edit Track ID</h3>
+        <button onclick="closeTrackDrawer()" class="w-8 h-8 rounded-lg border-2 border-ink font-mono font-extrabold hover:bg-coral hover:text-paper">✕</button>
+      </div>
+
+      <form id="trackEditForm" onsubmit="saveTrackDrawerForm(event)" class="space-y-4">
+        <input type="hidden" id="editTrackIdField" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Track Title *</label>
+            <input id="editTitleInput" type="text" required class="w-full px-3 py-2 rounded-xl border-2 border-ink font-bold text-sm bg-cream" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Primary Artist *</label>
+            <input id="editArtistInput" type="text" required class="w-full px-3 py-2 rounded-xl border-2 border-ink font-bold text-sm bg-cream" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Start (MM:SS)</label>
+            <input id="editStartInput" type="text" required placeholder="03:10" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-mono font-bold text-sm bg-cream" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">End (MM:SS)</label>
+            <input id="editEndInput" type="text" required placeholder="07:45" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-mono font-bold text-sm bg-cream" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">BPM</label>
+            <input id="editBpmInput" type="number" step="0.5" min="60" max="200" required class="w-full px-3 py-2 rounded-xl border-2 border-ink font-mono font-bold text-sm bg-cream" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Camelot Key</label>
+            <input id="editCamelotInput" type="text" required placeholder="6A" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-mono font-bold text-sm bg-cream" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Musical Key Name</label>
+            <input id="editKeyNameInput" type="text" placeholder="G Minor" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-bold text-sm bg-cream" />
+          </div>
+          <div>
+            <label class="block text-xs font-mono font-extrabold uppercase mb-1">Style / Vibe Tag</label>
+            <input id="editStyleInput" type="text" placeholder="Peak-Time UK Garage" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-bold text-sm bg-cream" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-mono font-extrabold uppercase mb-1">Producer / Songwriter Credits</label>
+          <input id="editCreditsInput" type="text" placeholder="Fred Gibson, Kieran Hebden" class="w-full px-3 py-2 rounded-xl border-2 border-ink font-medium text-sm bg-cream" />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t-2 border-ink">
+          <button type="button" onclick="closeTrackDrawer()" class="dj-btn px-4 py-2 rounded-xl bg-cream text-ink font-mono text-xs font-extrabold uppercase">
+            Cancel
+          </button>
+          <button type="submit" class="dj-btn px-5 py-2 rounded-xl bg-lime text-ink font-display text-xs font-extrabold uppercase">
+            Save to Tracklist
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: DECODING ENGINE CONNECTION                                   -->
+  <!-- ===================================================================== -->
+  <div id="engineModal" class="fixed inset-0 z-50 hidden bg-ink/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="dj-card w-full max-w-md p-6 space-y-4 bg-paper">
+      <div class="flex items-center justify-between border-b-2 border-ink pb-3">
+        <h3 class="font-display font-extrabold text-xl uppercase">Decoding Engine</h3>
+        <button onclick="toggleEngineModal()" class="w-8 h-8 rounded-lg border-2 border-ink font-mono font-extrabold hover:bg-coral hover:text-paper">✕</button>
+      </div>
+      <p class="text-xs font-medium text-ink/80 leading-relaxed">
+        <span class="font-bold">discojockey</span> listens to the set on its engine server: it downloads the audio, identifies every track, measures BPM, key and each blend. Paste the engine's address here if you run your own (see the README).
+      </p>
+      <div id="engineModalStatus" class="px-3 py-2 rounded-xl border-2 border-ink bg-cream font-mono text-xs font-bold">Checking…</div>
+      <div>
+        <label class="block text-xs font-mono font-extrabold uppercase mb-1">Engine URL</label>
+        <input id="engineUrlInput" type="url" placeholder="https://your-engine.example.com" class="w-full px-3 py-2.5 rounded-xl border-2 border-ink font-mono text-xs bg-cream" />
+      </div>
+      <div class="flex items-center justify-between gap-2 pt-2">
+        <button onclick="resetEngineUrl()" class="text-xs font-mono font-bold text-coral underline">Use default</button>
+        <div class="flex gap-2">
+          <button onclick="toggleEngineModal()" class="dj-btn px-4 py-2 rounded-xl bg-cream text-xs font-mono font-extrabold">Close</button>
+          <button onclick="saveEngineUrl()" class="dj-btn px-4 py-2 rounded-xl bg-lime text-xs font-display font-extrabold uppercase">Save &amp; Test</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <textarea id="clipboardFallbackArea" class="sr-only" aria-hidden="true"></textarea>
+  <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden dj-card-lime px-5 py-3 font-mono text-xs font-extrabold uppercase tracking-wide">
+    Copied to clipboard!
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t-[2.5px] border-ink bg-ink text-paper py-8 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="px-2.5 py-1 rounded-lg bg-lime text-ink font-display font-extrabold text-sm">discojockey</span>
+        <span class="text-xs font-mono text-paper/75">Built for late-night crate diggers, club heads &amp; B2B selectors.</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-4 text-xs font-mono text-paper/70">
+        <button onclick="switchPrimaryPage('studio')" class="hover:text-lime underline">01 / Mix Studio</button>
+        <button onclick="switchPrimaryPage('discover')" class="hover:text-lime underline">02 / Discover &amp; Mix</button>
+        <button onclick="exportCleanTracklist()" class="hover:text-lime underline">Export Tracklist</button>
+      </div>
+    </div>
   </footer>
 
-  <dialog id="editDialog">
-    <form id="editForm" method="dialog">
-      <h3>Edit tracklist</h3>
-      <p class="muted">One track per line: <code>3:45 Artist – Track</code>. Lines starting with <code>w/</code> are played on top of the track above.</p>
-      <textarea id="editText" rows="16" spellcheck="false"></textarea>
-      <div class="row end">
-        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
-        <button class="btn primary" value="save">Save</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="settingsDialog">
-    <form id="settingsForm" method="dialog">
-      <h3>Find tracklists automatically</h3>
-      <p class="muted">discojockey reads a video’s description and top comments through the YouTube Data API. That needs a free API key:</p>
-      <ol class="steps">
-        <li>Open <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API v3</a> in Google Cloud and click <b>Enable</b>.</li>
-        <li>Go to <b>Credentials → Create credentials → API key</b>.</li>
-        <li>Paste it below. It’s stored only in this browser.</li>
-      </ol>
-      <input id="keyInput" type="password" placeholder="AIza…" autocomplete="off">
-      <div class="row end">
-        <button class="btn ghost" value="cancel" formnovalidate>Cancel</button>
-        <button class="btn primary" value="save">Save</button>
-      </div>
-    </form>
-  </dialog>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC: ENGINE CLIENT, TIMELINE, CRATE & PLAYER            -->
+  <!-- ===================================================================== -->
+  <script src="config.js"></script>
   <script src="parser.js"></script>
   <script src="app.js"></script>
 </body>
