@@ -132,6 +132,16 @@ The analysis is tested on synthetic DJ mixes with known answers (`tests/`). On t
 - **Key** detection on electronic music is right most of the time, not always. Treat the Camelot code as a strong hint.
 - **Track changes** come from the audio, confirmed by recognition. A very gradual mix between two similar tracks can be missed when neither track is recognized.
 
+## Measuring it on real sets
+
+`evaluate.py` downloads each set, analyses the audio as if nobody had posted a tracklist, then checks the result against the timestamped tracklist viewers did post (when there is one). It reports how many track changes were found within 30 s of the posted times, how many songs were named right, and how long each stage took:
+
+```bash
+python -m discojockey_engine.evaluate https://www.youtube.com/watch?v=VIDEO_ID --out results.json
+```
+
+Use sets with a full timestamped tracklist in the description or comments; the rest still get timings but no score.
+
 ## Tests
 
 ```bash
